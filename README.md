@@ -5,8 +5,6 @@ This is a Helm Chart for installing kbot on your Kubernetes cluster.
 you believe you have found a security issue in our Helm chart, _please responsibly disclose_ 
 by submitting a Kbot Security ticket to our [Support Portal](https://konverso.atlassian.net/servicedesk/customer/portal/10).
 
-[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/kbot-self-hosted)](https://artifacthub.io/packages/search?repo=kbot-self-hosted)
-
 ## Prerequisites
 - Kubernetes: `>= 1.24`
 - Helm v3.0.0+ 
