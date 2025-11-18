@@ -1,0 +1,63 @@
+name: Test Build Release
+run-name: "${{github.ref_name}} -- Test Build Release"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, edited, synchronize]
+
+env:
+  ACR_REGISTRY_URL: konversoai.azurecr.io
+  CHART_NAME: kbot-self-hosted
+
+jobs:
+  pre-test:
+    name: Pre Test
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Lint Helm Chart
+        run: helm lint .
+
+      - name: Test Helm Chart Template
+        run: helm template test-release . --dry-run
+
+      - name: Package Helm Chart (Test)
+        run: helm package . --destination ./packages
+
+  build-push-helm:
+    name: Build and push Helm Chart
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/main' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Authenticate to Helm Registry
+        run: |
+          helm registry login ${{ env.ACR_REGISTRY_URL }} \
+          --username github-runner-helm-chart \
+          --password ${{ secrets.HELM_ACR_TOKEN }}
+
+      - name: Package Helm Chart
+        run: |
+          helm package . --destination ./packages
+          CHART_VERSION=$(helm show chart . | grep '^version:' | awk '{print $2}')
+          echo "CHART_VERSION=$CHART_VERSION" >> $GITHUB_ENV
+          echo "CHART_FILE=${{ env.CHART_NAME }}-$CHART_VERSION.tgz" >> $GITHUB_ENV
+
+      - name: Push Helm Chart to ACR
+        run: helm push ./packages/${{ env.CHART_FILE }} oci://${{ env.ACR_REGISTRY_URL }}/helm

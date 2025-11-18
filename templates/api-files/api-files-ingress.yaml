@@ -1,0 +1,42 @@
+{{- if and .Values.apiFiles.enabled .Values.apiFiles.ingress.enabled }}
+{{- $hostname := .Values.apiFiles.ingress.hostname | default "" -}}
+{{- if $hostname }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: {{ .Values.global.ingress.certManager.clusterIssuer }}
+    {{- toYaml .Values.apiFiles.ingress.annotations | nindent 4 }}
+  labels:
+    app: api-files
+  name: api-files
+  namespace: {{ .Values.global.namespace }}
+spec:
+  {{- with .Values.global.ingress.ingressClassName }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  rules:
+    - host: {{ $hostname | quote }}
+      http:
+        paths:
+        - backend:
+            service:
+              name: api-files
+              port:
+                number: 80
+          path: /storage
+          pathType: Prefix
+        - backend:
+            service:
+              name: api-files
+              port:
+                number: 5000
+          path: /
+          pathType: Prefix
+  tls:
+    - hosts:
+      - {{ $hostname }}
+      secretName: tls-api-files-prod-cert
+{{- end }}
+{{- end }}
+

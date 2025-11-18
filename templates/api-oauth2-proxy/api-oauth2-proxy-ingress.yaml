@@ -1,0 +1,43 @@
+{{- if and .Values.apiOauth2Proxy.enabled .Values.apiOauth2Proxy.ingress.enabled }}
+{{- $hostname := .Values.apiOauth2Proxy.ingress.hostname | default "" -}}
+{{- if $hostname }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-oauth2-proxy
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: api-oauth2-proxy
+    {{- with .Values.apiOauth2Proxy.ingress.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.apiOauth2Proxy.ingress.annotations }}
+  annotations:
+    {{- range $key, $value := . }}
+    {{ $key }}: {{ tpl (toString $value) $ | quote }}
+    {{- end }}
+  {{- end }}
+spec:
+  {{- with .Values.apiOauth2Proxy.ingress.ingressClassName }}
+  ingressClassName: {{ tpl . $ }}
+  {{- end }}
+  rules:
+    - host: {{ tpl $hostname $ | quote }}
+      http:
+        paths:
+          - path: {{ .Values.apiOauth2Proxy.ingress.path | default "/" }}
+            pathType: {{ .Values.apiOauth2Proxy.ingress.pathType | default "Prefix" }}
+            backend:
+              service:
+                name: api-oauth2-proxy
+                port:
+                  name: apirest
+  {{- if .Values.apiOauth2Proxy.ingress.tls }}
+  tls:
+    - hosts:
+      - {{ tpl $hostname $ }}
+      secretName: {{ .Values.apiOauth2Proxy.ingress.tls.secretName | default "tls-api-oauth2-proxy-prod-cert" }}
+  {{- end }}
+{{- end }}
+{{- end }}
+

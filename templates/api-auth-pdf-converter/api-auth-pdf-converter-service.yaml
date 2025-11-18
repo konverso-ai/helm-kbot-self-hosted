@@ -1,0 +1,24 @@
+{{- if .Values.apiAuthPdfConverter.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-auth-pdf-converter
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: api-auth-pdf-converter
+  {{- with .Values.apiAuthPdfConverter.service.annotations }}
+  annotations:
+    {{- range $key, $value := . }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+  {{- end }}
+spec:
+  ports:
+  - name: apirest
+    port: 5000
+    protocol: TCP
+    targetPort: 5000
+  selector:
+    app: api-auth-pdf-converter
+{{- end }}
+

@@ -1,0 +1,238 @@
+# Global settings
+global:
+  namespace: kbot
+  imageRegistry: konversoai.azurecr.io
+  logLevel: "warning"
+  # Image pull secret to use for registry authentication.
+  # Alternatively, the value may be specified as an array of strings.
+  imagePullSecrets: []
+  # imagePullSecrets:
+  #   - name: image-pull-secret
+
+apiAuthentication:
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    cpuThreshold: "60"
+    cooldownPeriod: 300
+    pollingInterval: 15
+  enabled: true
+  extraAnnotations: {}
+  extraLabels: {}
+  image:
+    tag: 7122aa0c
+  ingress:
+    enabled: true
+    ingressClassName: ""
+    host: ""
+  podExtraAnnotations: {}
+  podExtraLabels: {}
+  postgres:
+    dbName: ""
+    user: ""
+    host: ""
+    port: "5432"
+    password:
+      secretName: "kbot-secrets"
+      secretKey: "psql-kbot-password"
+  resources:
+    limits:
+      cpu: 600m
+      memory: 500Mi
+    requests:
+      cpu: 25m
+      memory: 300Mi
+  service:
+    annotations: {}
+
+apiAuthAntivirus:
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    cpuThreshold: "60"
+    cooldownPeriod: 300
+    pollingInterval: 15
+  enabled: true
+  extraAnnotations: {}
+  extraLabels: {}
+  image:
+    tag: ff5b5707
+  ingress:
+    enabled: true
+    hostname: ""
+    ingressClassName: ""
+    path: "/"
+    pathType: "Prefix"
+    annotations: {}
+    labels: {}
+    tls:
+      secretName: ""
+  podExtraAnnotations: {}
+  podExtraLabels: {}
+  resources:
+    limits:
+      cpu: "800m"
+      memory: "700Mi"
+    requests:
+      cpu: "25m"
+      memory: "300Mi"
+  service:
+    annotations: {}
+  tenantServiceUrl: ""
+
+apiAuthPdfConverter:
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    cpuThreshold: "60"
+    cooldownPeriod: 300
+    pollingInterval: 15
+  enabled: true
+  extraAnnotations: {}
+  extraLabels: {}
+  image:
+    tag: 35a2731b
+  ingress:
+    enabled: true
+    hostname: ""
+    ingressClassName: ""
+    path: "/"
+    pathType: "Prefix"
+    annotations: {}
+    labels: {}
+    tls:
+      secretName: ""
+  podExtraAnnotations: {}
+  podExtraLabels: {}
+  pvc:
+    enabled: true
+    name: api-auth-pdf-converter-data
+    size: 5Gi
+    storageClassName: ""
+  resources:
+    limits:
+      cpu: 75m
+      memory: 350Mi
+    requests:
+      cpu: 25m
+      memory: 300Mi
+  service:
+    annotations: {}
+
+apiFiles:
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    cpuThreshold: "60"
+    cooldownPeriod: 300
+    pollingInterval: 10
+  configmap:
+    enabled: true
+    name: nginx-config
+  enabled: true
+  extraAnnotations: {}
+  extraLabels: {}
+  image:
+    tag: 0081b9a5
+  ingress:
+    enabled: true
+    host: ""
+    annotations: {}
+  podExtraAnnotations: {}
+  podExtraLabels: {}
+  postgres:
+    dbName: ""
+    user: ""
+    host: ""
+    port: "5432"
+    password:
+      secretName: ""
+      secretKey: ""
+  pvc:
+    enabled: true
+    name: files-data-storage
+    size: 10Gi
+    storageClassName: ""
+  resources:
+    limits:
+      cpu: 300m
+      memory: 500Mi
+    requests:
+      cpu: 25m
+      memory: 250Mi
+  service:
+    annotations: {}
+    
+apiGotenberg:
+  args:
+    - gotenberg
+    - --api-disable-health-check-logging=true
+    - --api-port=3000
+    - --api-timeout=300s
+    - --chromium-auto-start=true
+    - --chromium-max-queue-size=15
+    - --gotenberg-graceful-shutdown-duration=300s
+    - --log-format=json
+    - --log-level=info
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    cpuThreshold: "60"
+    cooldownPeriod: 300
+    pollingInterval: 30
+  enabled: true
+  extraAnnotations: {}
+  extraLabels: {}
+  image:
+    tag: 8.21
+  podExtraAnnotations: {}
+  podExtraLabels: {}
+  resources:
+    limits:
+      cpu: 800m
+      memory: 1.5Gi
+    requests:
+      cpu: 200m
+      memory: 400Mi
+  service:
+    annotations: {}
+
+apiOauth2Proxy:
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    cpuThreshold: "60"
+    cooldownPeriod: 300
+    pollingInterval: 10
+  enabled: false
+  extraAnnotations: {}
+  extraLabels: {}
+  image:
+    tag: 0fe52478
+  ingress:
+    enabled: true
+    hostname: ""
+    ingressClassName: ""
+    path: "/"
+    pathType: "Prefix"
+    annotations: {}
+    labels: {}
+    tls:
+      secretName: ""
+  podExtraAnnotations: {}
+  podExtraLabels: {}
+  resources:
+    limits:
+      cpu: 75m
+      memory: 200Mi
+    requests:
+      cpu: 25m
+      memory: 100Mi
+  service:
+    annotations: {}

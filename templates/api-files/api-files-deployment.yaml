@@ -1,0 +1,110 @@
+{{- if .Values.apiFiles.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  {{- with .Values.apiFiles.extraAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    app: api-files
+    {{- with .Values.apiFiles.extraLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  name: api-files
+  namespace: {{ .Values.global.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: api-files
+  revisionHistoryLimit: 2
+  minReadySeconds: 15
+  progressDeadlineSeconds: 300
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      {{- with .Values.apiFiles.podExtraAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: api-files
+        {{- with .Values.apiFiles.podExtraLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- if .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- range .Values.global.imagePullSecrets }}
+        - name: {{ .name }}
+        {{- end }}
+      {{- end }}
+      containers:
+        - env:
+          - name: APP_ENV
+            value: "prod"
+          - name: DATABASE_NAME
+            value: {{ .Values.apiFiles.postgres.dbName | default "files_prod" | quote }}
+          - name: DATABASE_TYPE
+            value: pg
+          - name: FILEMANAGER_STORAGE
+            value: storage
+          - name: FILEMANAGER_URI_BASE
+            {{- $hostname := .Values.apiFiles.ingress.hostname | default .Values.apiFiles.ingress.host }}
+            value: {{ if $hostname }}https://{{ $hostname }}{{ else }}https://api-files-helm.dev.konverso.ai{{ end }}
+          - name: LOG_LEVEL
+            value: {{ .Values.global.logLevel | default "warning" | quote }}
+          - name: MODE
+            value: prod
+          - name: POSTGRES_USER
+            value: {{ .Values.apiAuthentication.postgres.user | quote }}
+          - name: POSTGRES_HOST
+            value: {{ .Values.apiAuthentication.postgres.host | quote }}
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ if .Values.apiAuthentication.postgres.password.secretName }}{{ .Values.apiAuthentication.postgres.password.secretName }}{{ else }}{{ .Values.global.secretName }}{{ end }}
+                key: {{ .Values.apiAuthentication.postgres.password.secretKey | quote }}
+          - name: POSTGRES_PORT
+            value: {{ .Values.apiAuthentication.postgres.port | quote }}
+          - name: TENANT_SERVICE_URL
+            value: {{ .Values.apiFiles.tenantServiceUrl | quote }}
+          image: {{ .Values.global.imageRegistry }}/api-files:{{ .Values.apiFiles.image.tag }}
+          name: api-files
+          resources:
+            {{- toYaml .Values.apiFiles.resources | nindent 12 }}
+          ports:
+            - containerPort: 80
+              name: storage
+              protocol: TCP
+            - containerPort: 5000
+              name: apirest
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /home/konverso/storage
+              name: files-data-storage
+      initContainers:
+        - name: storage-nginx-redirect
+          image: {{ .Values.global.imageRegistry }}/nginx-forked:f4650f85
+          restartPolicy: Always
+          volumeMounts:
+            - mountPath: /etc/nginx/conf.d
+              name: nginx-config
+            - mountPath: /var/www/storage
+              name: files-data-storage
+      securityContext:
+        fsGroup: 1000
+      volumes:
+        - name: files-data-storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.apiFiles.pvc.name }}
+        - configMap:
+            defaultMode: 420
+            name: {{ .Values.apiFiles.configmap.name }}
+          name: nginx-config
+{{- end }}
+

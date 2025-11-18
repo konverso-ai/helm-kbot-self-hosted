@@ -1,0 +1,83 @@
+{{- if .Values.apiAuthentication.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  {{- with .Values.apiAuthentication.extraAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    app: api-authentication
+    {{- with .Values.apiAuthentication.extraLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  name: api-authentication
+  namespace: {{ .Values.global.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: api-authentication
+  revisionHistoryLimit: 2
+  minReadySeconds: 15
+  progressDeadlineSeconds: 300
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      {{- with .Values.apiAuthentication.podExtraAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: api-authentication
+        {{- with .Values.apiAuthentication.podExtraLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- if .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- range .Values.global.imagePullSecrets }}
+        - name: {{ .name }}
+        {{- end }}
+      {{- end }}
+      containers:
+        - env:
+          - name: APP_ENV
+            value: "prod"
+          - name: DATABASE_NAME
+            value: {{ .Values.apiAuthentication.postgres.dbName | default "tenants_prod" | quote }}
+          - name: DATABASE_TYPE
+            value: pg
+          - name: LOG_LEVEL
+            value: {{ .Values.global.logLevel | default "warning" | quote }}
+          - name: MASTER_API_KEY_VALUE
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.global.secretName }}
+                key: master-api-key
+          - name: MODE
+            value: prod
+          - name: POSTGRES_USER
+            value: {{ .Values.apiAuthentication.postgres.user | quote }}
+          - name: POSTGRES_HOST
+            value: {{ .Values.apiAuthentication.postgres.host | quote }}
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ if .Values.apiAuthentication.postgres.password.secretName }}{{ .Values.apiAuthentication.postgres.password.secretName }}{{ else }}{{ .Values.global.secretName }}{{ end }}
+                key: {{ .Values.apiAuthentication.postgres.password.secretKey | quote }}
+          - name: POSTGRES_PORT
+            value: {{ .Values.apiAuthentication.postgres.port | quote }}
+          image: {{ .Values.global.imageRegistry }}/api-authentication:{{ .Values.apiAuthentication.image.tag }}
+          name: api-authentication
+          resources:
+            {{- toYaml .Values.apiAuthentication.resources | nindent 12 }}
+          ports:
+            - containerPort: 5000
+              name: apirest
+              protocol: TCP
+{{- end }}
+
