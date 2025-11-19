@@ -20,7 +20,3 @@ kubectl create secret docker-registry konverso-registry-secret \
     --docker-username=xxx \
     --docker-password=xxx
 ```
-4. Install the Helm Charts
-```bash
-helm install kbot-self-hosted oci://konversoai.azurecr.io/helm/kbot-self-hosted --version 0.1.0 --namespace kbot --create-namespace -f values.yaml
-```
