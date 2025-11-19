@@ -27,12 +27,15 @@ jobs:
         uses: azure/setup-helm@v4
 
       - name: Lint Helm Chart
+        working-directory: charts/kbot-self-hosted
         run: helm lint .
 
       - name: Test Helm Chart Template
+        working-directory: charts/kbot-self-hosted
         run: helm template test-release . --dry-run
 
       - name: Package Helm Chart (Test)
+        working-directory: charts/kbot-self-hosted
         run: helm package . --destination ./packages
 
   build-push-helm:
@@ -54,7 +57,6 @@ jobs:
         env:
           CR_TOKEN: "${{ secrets.GH_PAT }}"
         with:
-          charts_dir: .
           skip_existing: true
 
       - name: Authenticate to Helm Registry
@@ -64,6 +66,7 @@ jobs:
           --password ${{ secrets.HELM_ACR_TOKEN }}
 
       - name: Package Helm Chart
+        working-directory: charts/kbot-self-hosted
         run: |
           helm package . --destination ./packages
           CHART_VERSION=$(helm show chart . | grep '^version:' | awk '{print $2}')
@@ -71,4 +74,4 @@ jobs:
           echo "CHART_FILE=${{ env.CHART_NAME }}-$CHART_VERSION.tgz" >> $GITHUB_ENV
 
       - name: Push Helm Chart to ACR
-        run: helm push ./packages/${{ env.CHART_FILE }} oci://${{ env.ACR_REGISTRY_URL }}/helm
+        run: helm push charts/kbot-self-hosted/packages/${{ env.CHART_FILE }} oci://${{ env.ACR_REGISTRY_URL }}/helm
