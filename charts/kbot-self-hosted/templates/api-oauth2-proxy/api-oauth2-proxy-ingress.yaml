@@ -36,7 +36,6 @@ spec:
     - hosts:
       - {{ tpl $hostname $ }}
       secretName: tls-api-oauth2-proxy-prod-cert
-  {{- end }}
 {{- end }}
 {{- end }}
 
