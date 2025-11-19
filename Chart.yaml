@@ -2,7 +2,7 @@ apiVersion: v2
 name: kbot-self-hosted
 description: A Helm chart for Kbot self-hosted installation including all microservices
 type: application
-version: 0.2.0
+version: 0.1.0
 appVersion: "1.0"
 keywords:
   - kbot

@@ -53,6 +53,9 @@ jobs:
         uses: helm/chart-releaser-action@v1.7.0
         env:
           CR_TOKEN: "${{ secrets.GH_PAT }}"
+        with:
+          charts_dir: .
+          skip_existing: true
 
       - name: Authenticate to Helm Registry
         run: |
