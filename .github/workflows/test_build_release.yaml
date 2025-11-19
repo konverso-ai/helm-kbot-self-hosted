@@ -57,6 +57,7 @@ jobs:
         env:
           CR_TOKEN: "${{ secrets.GH_PAT }}"
         with:
+          charts_dir: charts/kbot-self-hosted
           skip_existing: true
 
       - name: Authenticate to Helm Registry
