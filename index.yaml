@@ -1,0 +1,23 @@
+apiVersion: v1
+entries:
+  kbot-self-hosted:
+  - apiVersion: v2
+    appVersion: "1.0"
+    created: "2025-11-19T14:24:02.111035256Z"
+    dependencies:
+    - name: clamav
+      repository: https://wiremind.github.io/wiremind-helm-charts
+      version: 3.7.1
+    description: A Helm chart for Kbot self-hosted installation including all microservices
+    digest: 060ff70f39c5fbee1c4ce41f3ec570dcf6512bd8fa6e4136d4985f0d28b35d13
+    keywords:
+    - kbot
+    - konverso
+    maintainers:
+    - name: Konverso Team
+    name: kbot-self-hosted
+    type: application
+    urls:
+    - https://github.com/konverso-ai/helm-kbot-self-hosted/releases/download/kbot-self-hosted-0.1.0/kbot-self-hosted-0.1.0.tgz
+    version: 0.1.0
+generated: "2025-11-19T14:24:02.111043472Z"
