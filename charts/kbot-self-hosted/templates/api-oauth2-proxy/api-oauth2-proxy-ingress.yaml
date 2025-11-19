@@ -25,18 +25,17 @@ spec:
     - host: {{ tpl $hostname $ | quote }}
       http:
         paths:
-          - path: {{ .Values.apiOauth2Proxy.ingress.path | default "/" }}
-            pathType: {{ .Values.apiOauth2Proxy.ingress.pathType | default "Prefix" }}
+          - path: /
+            pathType: Prefix
             backend:
               service:
                 name: api-oauth2-proxy
                 port:
                   name: apirest
-  {{- if .Values.apiOauth2Proxy.ingress.tls }}
   tls:
     - hosts:
       - {{ tpl $hostname $ }}
-      secretName: {{ .Values.apiOauth2Proxy.ingress.tls.secretName | default "tls-api-oauth2-proxy-prod-cert" }}
+      secretName: tls-api-oauth2-proxy-prod-cert
   {{- end }}
 {{- end }}
 {{- end }}
