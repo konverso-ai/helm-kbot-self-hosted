@@ -6,8 +6,8 @@ description: A Helm chart for Kbot self-hosted installation including all micros
 type: application
 home: https://www.konverso.ai/
 keywords:
-  - kbot
   - konverso
+  - kbot
 maintainers:
   - name: Konverso Team
 dependencies:
