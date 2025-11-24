@@ -50,7 +50,7 @@ spec:
           - name: API_KEYS
             valueFrom:
               secretKeyRef:
-                name: {{ .Values.global.secretName }}
+                name: {{ .Values.global.secretName | default "kbot-secrets" }}
                 key: oauth2-proxy-api-key
           - name: LOG_LEVEL
             value: {{ .Values.global.logLevel | default "warning" | quote }}

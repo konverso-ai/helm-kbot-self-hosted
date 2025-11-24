@@ -56,7 +56,7 @@ spec:
           - name: MASTER_API_KEY_VALUE
             valueFrom:
               secretKeyRef:
-                name: {{ .Values.global.secretName }}
+                name: {{ .Values.global.secretName | default "kbot-secrets" }}
                 key: master-api-key
           - name: MODE
             value: prod
@@ -67,7 +67,7 @@ spec:
           - name: POSTGRES_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: {{ if .Values.apiAuthentication.postgres.password.secretName }}{{ .Values.apiAuthentication.postgres.password.secretName }}{{ else }}{{ .Values.global.secretName }}{{ end }}
+                name: {{ if .Values.apiAuthentication.postgres.password.secretName }}{{ .Values.apiAuthentication.postgres.password.secretName }}{{ else }}{{ .Values.global.secretName | default "kbot-secrets" }}{{ end }}
                 key: {{ .Values.apiAuthentication.postgres.password.secretKey | quote }}
           - name: POSTGRES_PORT
             value: {{ .Values.apiAuthentication.postgres.port | quote }}
