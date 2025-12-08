@@ -8,7 +8,6 @@ global:
   imagePullSecrets: []
   # imagePullSecrets:
   #   - name: image-pull-secret
-
 apiAuthentication:
   autoscaling:
     enabled: true
@@ -45,7 +44,6 @@ apiAuthentication:
       memory: 300Mi
   service:
     annotations: {}
-
 apiAuthAntivirus:
   autoscaling:
     enabled: true
@@ -58,7 +56,7 @@ apiAuthAntivirus:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: ff5b5707
+    tag: ${GITHUB_SHA_SHORT}
   ingress:
     enabled: true
     hostname: ""
@@ -81,7 +79,6 @@ apiAuthAntivirus:
   service:
     annotations: {}
   tenantServiceUrl: ""
-
 apiAuthPdfConverter:
   autoscaling:
     enabled: true
@@ -121,7 +118,6 @@ apiAuthPdfConverter:
       memory: 300Mi
   service:
     annotations: {}
-
 apiFiles:
   autoscaling:
     enabled: true
@@ -166,7 +162,6 @@ apiFiles:
       memory: 250Mi
   service:
     annotations: {}
-    
 apiGotenberg:
   args:
     - gotenberg
@@ -201,7 +196,6 @@ apiGotenberg:
       memory: 400Mi
   service:
     annotations: {}
-
 apiOauth2Proxy:
   autoscaling:
     enabled: true
