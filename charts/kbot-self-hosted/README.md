@@ -29,9 +29,7 @@ by submitting a Kbot Security ticket to our [Support Portal](https://konverso.at
 1. Request docker credentials from Konverso support
 2. Add our Helm repository
 ```bash
-helm registry login konversoai.azurecr.io \
-  --username $USER_NAME \
-  --password $PASSWORD
+helm repo add kbot-self-hosted https://konverso-ai.github.io/helm-kbot-self-hosted/
 ```
 3. Create Kubernetes image pull secret
 ```bash
@@ -43,7 +41,7 @@ kubectl create secret docker-registry konverso-registry-secret \
 ```
 4. Install the Helm Charts
 ```bash
-helm install kbot-self-hosted oci://konversoai.azurecr.io/helm/kbot-self-hosted --version 0.1.0 --namespace kbot --create-namespace -f values.yaml
+helm install kbot-self-hosted kbot-self-hosted/kbot-self-hosted --version 0.1.0 --namespace kbot --create-namespace -f kbot-helm-values.yaml
 ```
 
 ## Changelog
