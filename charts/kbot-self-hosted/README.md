@@ -39,9 +39,13 @@ kubectl create secret docker-registry konverso-registry-secret \
     --docker-username=xxx \
     --docker-password=xxx
 ```
-4. Install the Helm Charts
+4. Install
 ```bash
-helm install kbot-self-hosted kbot-self-hosted/kbot-self-hosted --version 0.1.0 --namespace kbot --create-namespace -f kbot-helm-values.yaml
+helm install kbot kbot-self-hosted/kbot-self-hosted --version 0.1.0 --namespace kbot --create-namespace -f kbot-helm-values.yaml
+```
+5. Upgrade
+```bash
+helm upgrade kbot kbot-self-hosted/kbot-self-hosted --version 0.1.1 --namespace kbot --create-namespace -f kbot-helm-values.yaml
 ```
 
 ## Changelog
