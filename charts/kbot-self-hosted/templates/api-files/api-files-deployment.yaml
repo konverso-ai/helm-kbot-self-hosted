@@ -43,6 +43,14 @@ spec:
         - name: {{ .name }}
         {{- end }}
       {{- end }}
+      {{- with .Values.apiFiles.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.apiFiles.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - env:
           - name: APP_ENV
