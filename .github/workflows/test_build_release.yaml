@@ -54,6 +54,27 @@ jobs:
       - name: Add dependency chart repos
         run: helm repo add wiremind https://wiremind.github.io/wiremind-helm-charts
 
+      - name: Get Chart Version
+        working-directory: charts/kbot-self-hosted
+        run: |
+          CHART_VERSION=$(helm show chart . | grep '^version:' | awk '{print $2}')
+          echo "CHART_VERSION=$CHART_VERSION" >> $GITHUB_ENV
+          echo "CHART_FILE=${{ env.CHART_NAME }}-$CHART_VERSION.tgz" >> $GITHUB_ENV
+
+      - name: Check if release already exists
+        id: check_release
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          TAG="${{ env.CHART_NAME }}-${{ env.CHART_VERSION }}"
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "Release $TAG already exists, skipping release notes update..."
+            echo "release_created=false" >> $GITHUB_OUTPUT
+          else
+            echo "Release $TAG does not exist, will create..."
+            echo "release_created=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Configure Git
         run: git config --global user.email "73905580+konversoai@users.noreply.github.com" && git config --global user.name "konversoai"   
 
@@ -74,9 +95,150 @@ jobs:
         working-directory: charts/kbot-self-hosted
         run: |
           helm package . --destination ./packages
-          CHART_VERSION=$(helm show chart . | grep '^version:' | awk '{print $2}')
-          echo "CHART_VERSION=$CHART_VERSION" >> $GITHUB_ENV
-          echo "CHART_FILE=${{ env.CHART_NAME }}-$CHART_VERSION.tgz" >> $GITHUB_ENV
 
       - name: Push Helm Chart to ACR
         run: helm push charts/kbot-self-hosted/packages/${{ env.CHART_FILE }} oci://${{ env.ACR_REGISTRY_URL }}/helm
+
+      - name: Update Release Notes
+        if: ${{ steps.check_release.outputs.release_created == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          TAG="${{ env.CHART_NAME }}-${{ env.CHART_VERSION }}"
+          
+          # Get the previous tag
+          PREV_TAG=$(git tag --sort=-version:refname | grep "^${{ env.CHART_NAME }}-" | head -2 | tail -1)
+          
+          if [ -z "$PREV_TAG" ]; then
+            # First release, get all commits
+            COMMITS=$(git log --pretty=format:"%s|%H" --no-merges)
+          else
+            # Get commits since last tag
+            COMMITS=$(git log ${PREV_TAG}..HEAD --pretty=format:"%s|%H" --no-merges)
+          fi
+          
+          # Initialize changelog sections
+          BUILD=""
+          CHORE=""
+          CI=""
+          DOCS=""
+          FEAT=""
+          FIX=""
+          OTHER=""
+          PERF=""
+          REFACTOR=""
+          REVERT=""
+          TEST=""
+          
+          # Parse commits
+          while IFS= read -r line; do
+            if [ -n "$line" ]; then
+              COMMIT_MSG=$(echo "$line" | cut -d'|' -f1)
+              COMMIT_HASH=$(echo "$line" | cut -d'|' -f2)
+              SHORT_HASH=${COMMIT_HASH:0:7}
+              COMMIT_LINK="([${SHORT_HASH}](https://github.com/${{ github.repository }}/commit/${COMMIT_HASH}))"
+              
+              # Parse conventional commit formats
+              case "$COMMIT_MSG" in
+                build\(*\):*|build:*)
+                  DESC=$(echo "$COMMIT_MSG" | sed -E 's/^build(\([^)]*\))?:[[:space:]]*//')
+                  BUILD="${BUILD}- ${DESC} ${COMMIT_LINK}\n"
+                  ;;
+                ci\(*\):*|ci:*)
+                  DESC=$(echo "$COMMIT_MSG" | sed -E 's/^ci(\([^)]*\))?:[[:space:]]*//')
+                  CI="${CI}- ${DESC} ${COMMIT_LINK}\n"
+                  ;;
+                chore\(*\):*|chore:*)
+                  DESC=$(echo "$COMMIT_MSG" | sed -E 's/^chore(\([^)]*\))?:[[:space:]]*//')
+                  CHORE="${CHORE}- ${DESC} ${COMMIT_LINK}\n"
+                  ;;
+                docs\(*\):*|docs:*)
+                  DESC=$(echo "$COMMIT_MSG" | sed -E 's/^docs(\([^)]*\))?:[[:space:]]*//')
+                  DOCS="${DOCS}- ${DESC} ${COMMIT_LINK}\n"
+                  ;;
+                feat\(*\):*|feat:*)
+                  DESC=$(echo "$COMMIT_MSG" | sed -E 's/^feat(\([^)]*\))?:[[:space:]]*//')
+                  FEAT="${FEAT}- ${DESC} ${COMMIT_LINK}\n"
+                  ;;
+                fix\(*\):*|fix:*)
+                  DESC=$(echo "$COMMIT_MSG" | sed -E 's/^fix(\([^)]*\))?:[[:space:]]*//')
+                  FIX="${FIX}- ${DESC} ${COMMIT_LINK}\n"
+                  ;;
+                perf\(*\):*|perf:*)
+                  DESC=$(echo "$COMMIT_MSG" | sed -E 's/^perf(\([^)]*\))?:[[:space:]]*//')
+                  PERF="${PERF}- ${DESC} ${COMMIT_LINK}\n"
+                  ;;
+                refactor\(*\):*|refactor:*)
+                  DESC=$(echo "$COMMIT_MSG" | sed -E 's/^refactor(\([^)]*\))?:[[:space:]]*//')
+                  REFACTOR="${REFACTOR}- ${DESC} ${COMMIT_LINK}\n"
+                  ;;
+                revert\(*\):*|revert:*)
+                  DESC=$(echo "$COMMIT_MSG" | sed -E 's/^revert(\([^)]*\))?:[[:space:]]*//')
+                  REVERT="${REVERT}- ${DESC} ${COMMIT_LINK}\n"
+                  ;;
+                test\(*\):*|test:*)
+                  DESC=$(echo "$COMMIT_MSG" | sed -E 's/^test(\([^)]*\))?:[[:space:]]*//')
+                  TEST="${TEST}- ${DESC} ${COMMIT_LINK}\n"
+                  ;;
+                *)
+                  # Include other commits that don't match conventional format
+                  OTHER="${OTHER}- ${COMMIT_MSG} ${COMMIT_LINK}\n"
+                  ;;
+              esac
+            fi
+          done <<< "$COMMITS"
+          
+          # Build changelog
+          CHANGELOG="# What's new\n\n## [${CHART_VERSION}] - $(date +%Y-%m-%d)\n\n"
+          if [ -n "$BUILD" ]; then
+            CHANGELOG="${CHANGELOG}### Build System\n${BUILD}\n"
+          fi
+          
+          if [ -n "$CI" ]; then
+            CHANGELOG="${CHANGELOG}### CI\n${CI}\n"
+          fi
+          
+          if [ -n "$CHORE" ]; then
+            CHANGELOG="${CHANGELOG}### Chores\n${CHORE}\n"
+          fi
+
+          if [ -n "$DOCS" ]; then
+            CHANGELOG="${CHANGELOG}### Documentation\n${DOCS}\n"
+          fi
+
+          if [ -n "$FEAT" ]; then
+            CHANGELOG="${CHANGELOG}### Features\n${FEAT}\n"
+          fi
+
+          if [ -n "$FIX" ]; then
+            CHANGELOG="${CHANGELOG}### Bug Fixes\n${FIX}\n"
+          fi
+          
+          if [ -n "$PERF" ]; then
+            CHANGELOG="${CHANGELOG}### Performance\n${PERF}\n"
+          fi
+          
+          if [ -n "$REFACTOR" ]; then
+            CHANGELOG="${CHANGELOG}### Refactoring\n${REFACTOR}\n"
+          fi
+          
+          if [ -n "$REVERT" ]; then
+            CHANGELOG="${CHANGELOG}### Reverts\n${REVERT}\n"
+          fi
+          
+          if [ -n "$TEST" ]; then
+            CHANGELOG="${CHANGELOG}### Tests\n${TEST}\n"
+          fi
+          
+          if [ -n "$OTHER" ]; then
+            CHANGELOG="${CHANGELOG}### Other Changes\n${OTHER}\n"
+          fi
+          
+          # Write changelog to file to handle multiline
+          echo -e "$CHANGELOG" > /tmp/changelog.md
+          
+          echo "Generated changelog:"
+          cat /tmp/changelog.md
+          
+          # Update the release with generated notes
+          gh release edit "$TAG" --notes-file /tmp/changelog.md
