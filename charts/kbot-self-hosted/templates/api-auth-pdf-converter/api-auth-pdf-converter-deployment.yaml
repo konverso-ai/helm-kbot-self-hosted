@@ -43,6 +43,14 @@ spec:
         - name: {{ .name }}
         {{- end }}
       {{- end }}
+      {{- with .Values.apiAuthPdfConverter.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.apiAuthPdfConverter.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: api-auth-pdf-converter
           env:

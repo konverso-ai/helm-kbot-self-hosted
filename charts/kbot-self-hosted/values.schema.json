@@ -79,11 +79,22 @@
                         }
                     }
                 },
+                "nodeSelector": {
+                    "type": "object",
+                    "description": "Node labels for pod assignment"
+                },
                 "podExtraAnnotations": {
                     "type": "object"
                 },
                 "podExtraLabels": {
                     "type": "object"
+                },
+                "tolerations": {
+                    "type": "array",
+                    "description": "Tolerations for pod assignment",
+                    "items": {
+                        "type": "object"
+                    }
                 },
                 "resources": {
                     "type": "object",
@@ -202,11 +213,22 @@
                         }
                     }
                 },
+                "nodeSelector": {
+                    "type": "object",
+                    "description": "Node labels for pod assignment"
+                },
                 "podExtraAnnotations": {
                     "type": "object"
                 },
                 "podExtraLabels": {
                     "type": "object"
+                },
+                "tolerations": {
+                    "type": "array",
+                    "description": "Tolerations for pod assignment",
+                    "items": {
+                        "type": "object"
+                    }
                 },
                 "pvc": {
                     "type": "object",
@@ -319,11 +341,22 @@
                         }
                     }
                 },
+                "nodeSelector": {
+                    "type": "object",
+                    "description": "Node labels for pod assignment"
+                },
                 "podExtraAnnotations": {
                     "type": "object"
                 },
                 "podExtraLabels": {
                     "type": "object"
+                },
+                "tolerations": {
+                    "type": "array",
+                    "description": "Tolerations for pod assignment",
+                    "items": {
+                        "type": "object"
+                    }
                 },
                 "postgres": {
                     "type": "object",
@@ -458,11 +491,22 @@
                         }
                     }
                 },
+                "nodeSelector": {
+                    "type": "object",
+                    "description": "Node labels for pod assignment"
+                },
                 "podExtraAnnotations": {
                     "type": "object"
                 },
                 "podExtraLabels": {
                     "type": "object"
+                },
+                "tolerations": {
+                    "type": "array",
+                    "description": "Tolerations for pod assignment",
+                    "items": {
+                        "type": "object"
+                    }
                 },
                 "postgres": {
                     "type": "object",
@@ -595,11 +639,22 @@
                         }
                     }
                 },
+                "nodeSelector": {
+                    "type": "object",
+                    "description": "Node labels for pod assignment"
+                },
                 "podExtraAnnotations": {
                     "type": "object"
                 },
                 "podExtraLabels": {
                     "type": "object"
+                },
+                "tolerations": {
+                    "type": "array",
+                    "description": "Tolerations for pod assignment",
+                    "items": {
+                        "type": "object"
+                    }
                 },
                 "resources": {
                     "type": "object",
@@ -715,11 +770,22 @@
                         }
                     }
                 },
+                "nodeSelector": {
+                    "type": "object",
+                    "description": "Node labels for pod assignment"
+                },
                 "podExtraAnnotations": {
                     "type": "object"
                 },
                 "podExtraLabels": {
                     "type": "object"
+                },
+                "tolerations": {
+                    "type": "array",
+                    "description": "Tolerations for pod assignment",
+                    "items": {
+                        "type": "object"
+                    }
                 },
                 "resources": {
                     "type": "object",
