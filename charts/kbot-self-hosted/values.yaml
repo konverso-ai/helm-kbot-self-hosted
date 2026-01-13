@@ -192,7 +192,7 @@ apiGotenberg:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: 5f304a5a
+    tag: 8.21
   nodeSelector: {}
   podExtraAnnotations: {}
   podExtraLabels: {}
