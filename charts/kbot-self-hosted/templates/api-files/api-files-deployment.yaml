@@ -97,7 +97,7 @@ spec:
               name: files-data-storage
       initContainers:
         - name: storage-nginx-redirect
-          image: {{ .Values.global.imageRegistry }}/nginx-forked:f4650f85
+          image: {{ .Values.global.imageRegistry }}/nginx-forked:790ec23f
           restartPolicy: Always
           volumeMounts:
             - mountPath: /etc/nginx/conf.d
