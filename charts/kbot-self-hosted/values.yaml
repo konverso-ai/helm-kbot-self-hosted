@@ -58,7 +58,7 @@ apiAuthAntivirus:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: ${GITHUB_SHA_SHORT}
+    tag: 5f304a5a
   ingress:
     enabled: true
     hostname: ""
@@ -95,7 +95,7 @@ apiAuthPdfConverter:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: 35a2731b
+    tag: 5f304a5a
   ingress:
     enabled: true
     hostname: ""
@@ -139,7 +139,7 @@ apiFiles:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: 0081b9a5
+    tag: 5f304a5a
   ingress:
     enabled: true
     host: ""
@@ -192,7 +192,7 @@ apiGotenberg:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: 8.21
+    tag: 5f304a5a
   nodeSelector: {}
   podExtraAnnotations: {}
   podExtraLabels: {}
@@ -218,7 +218,7 @@ apiOauth2Proxy:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: 0fe52478
+    tag: 5f304a5a
   ingress:
     enabled: true
     hostname: ""
