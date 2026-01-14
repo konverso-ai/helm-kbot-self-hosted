@@ -29,13 +29,6 @@ spec:
             service:
               name: api-authentication
               port:
-                number: 80
-          path: /storage
-          pathType: Prefix
-        - backend:
-            service:
-              name: api-authentication
-              port:
                 number: 5000
           path: /
           pathType: Prefix
