@@ -56,7 +56,7 @@ spec:
           - name: APP_ENV
             value: "prod"
           - name: CLAMAV_SOCKET_HOST
-            value: kbot-self-hosted-clamav.kbot.svc
+            value: {{ .Values.apiAuthAntivirus.clamavSocketHost | quote }}
           - name: CLAMAV_SOCKET_PORT
             value: "3310"
           - name: LOG_LEVEL
