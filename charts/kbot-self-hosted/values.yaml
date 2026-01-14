@@ -16,6 +16,7 @@ apiAuthAntivirus:
     cpuThreshold: "60"
     cooldownPeriod: 300
     pollingInterval: 15
+  clamavSocketHost: "kbot-self-hosted-clamav.kbot.svc"
   enabled: true
   extraAnnotations: {}
   extraLabels: {}
