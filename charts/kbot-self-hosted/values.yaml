@@ -8,44 +8,6 @@ global:
   imagePullSecrets: []
   # imagePullSecrets:
   #   - name: image-pull-secret
-apiAuthentication:
-  autoscaling:
-    enabled: true
-    minReplicas: 1
-    maxReplicas: 5
-    cpuThreshold: "60"
-    cooldownPeriod: 300
-    pollingInterval: 15
-  enabled: true
-  extraAnnotations: {}
-  extraLabels: {}
-  image:
-    tag: 7122aa0c
-  ingress:
-    enabled: true
-    ingressClassName: ""
-    host: ""
-  nodeSelector: {}
-  podExtraAnnotations: {}
-  podExtraLabels: {}
-  tolerations: []
-  postgres:
-    dbName: ""
-    user: ""
-    host: ""
-    port: "5432"
-    password:
-      secretName: "kbot-secrets"
-      secretKey: "psql-kbot-password"
-  resources:
-    limits:
-      cpu: 600m
-      memory: 500Mi
-    requests:
-      cpu: 25m
-      memory: 300Mi
-  service:
-    annotations: {}
 apiAuthAntivirus:
   autoscaling:
     enabled: true
@@ -95,7 +57,7 @@ apiAuthPdfConverter:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: 5f304a5a
+    tag: 35a2731b
   ingress:
     enabled: true
     hostname: ""
@@ -124,6 +86,44 @@ apiAuthPdfConverter:
       memory: 300Mi
   service:
     annotations: {}
+apiAuthentication:
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    cpuThreshold: "60"
+    cooldownPeriod: 300
+    pollingInterval: 15
+  enabled: true
+  extraAnnotations: {}
+  extraLabels: {}
+  image:
+    tag: 7122aa0c
+  ingress:
+    enabled: true
+    ingressClassName: ""
+    host: ""
+  nodeSelector: {}
+  podExtraAnnotations: {}
+  podExtraLabels: {}
+  tolerations: []
+  postgres:
+    dbName: ""
+    user: ""
+    host: ""
+    port: "5432"
+    password:
+      secretName: "kbot-secrets"
+      secretKey: "psql-kbot-password"
+  resources:
+    limits:
+      cpu: 200m
+      memory: 150Mi
+    requests:
+      cpu: 75m
+      memory: 75Mi
+  service:
+    annotations: {}
 apiFiles:
   autoscaling:
     enabled: true
@@ -139,7 +139,7 @@ apiFiles:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: 5f304a5a
+    tag: 0081b9a5
   ingress:
     enabled: true
     host: ""
@@ -218,7 +218,7 @@ apiOauth2Proxy:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: 5f304a5a
+    tag: 0fe52478
   ingress:
     enabled: true
     hostname: ""
