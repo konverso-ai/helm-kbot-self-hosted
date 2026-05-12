@@ -180,7 +180,7 @@ apiGotenberg:
     - --chromium-auto-start=true
     - --chromium-max-queue-size=15
     - --gotenberg-graceful-shutdown-duration=300s
-    - --log-format=json
+    - --log-std-format=json
     - --log-level=info
   autoscaling:
     enabled: true
@@ -193,7 +193,7 @@ apiGotenberg:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: v2026.4.4
+    tag: 8.30
   nodeSelector: {}
   podExtraAnnotations: {}
   podExtraLabels: {}
