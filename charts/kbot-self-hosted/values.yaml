@@ -140,7 +140,7 @@ apiFiles:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: v2026.4.4
+    tag: v2026.5.2
   ingress:
     enabled: true
     host: ""
