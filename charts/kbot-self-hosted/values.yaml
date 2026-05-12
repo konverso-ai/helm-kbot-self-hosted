@@ -21,7 +21,7 @@ apiAuthAntivirus:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: 5f304a5a
+    tag: v2026.4.4
   ingress:
     enabled: true
     hostname: ""
@@ -58,7 +58,7 @@ apiAuthPdfConverter:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: v2026.5.1
+    tag: v2026.4.4
   ingress:
     enabled: true
     hostname: ""
@@ -99,7 +99,7 @@ apiAuthentication:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: v2026.5.1
+    tag: v2026.4.4
   ingress:
     enabled: true
     ingressClassName: ""
@@ -140,7 +140,7 @@ apiFiles:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: v2026.5.1
+    tag: v2026.4.4
   ingress:
     enabled: true
     host: ""
@@ -193,7 +193,7 @@ apiGotenberg:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: v2026.5.1
+    tag: v2026.4.4
   nodeSelector: {}
   podExtraAnnotations: {}
   podExtraLabels: {}
@@ -219,7 +219,7 @@ apiOauth2Proxy:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: v2026.5.1
+    tag: v2026.4.4
   ingress:
     enabled: true
     hostname: ""
