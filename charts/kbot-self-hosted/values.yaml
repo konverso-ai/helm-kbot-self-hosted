@@ -58,7 +58,7 @@ apiAuthPdfConverter:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: 35a2731b
+    tag: v2026.5.1
   ingress:
     enabled: true
     hostname: ""
@@ -99,7 +99,7 @@ apiAuthentication:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: 7122aa0c
+    tag: v2026.5.1
   ingress:
     enabled: true
     ingressClassName: ""
@@ -140,7 +140,7 @@ apiFiles:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: 0081b9a5
+    tag: v2026.5.1
   ingress:
     enabled: true
     host: ""
@@ -193,7 +193,7 @@ apiGotenberg:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: 8.21
+    tag: v2026.5.1
   nodeSelector: {}
   podExtraAnnotations: {}
   podExtraLabels: {}
@@ -219,7 +219,7 @@ apiOauth2Proxy:
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: 0fe52478
+    tag: v2026.5.1
   ingress:
     enabled: true
     hostname: ""
