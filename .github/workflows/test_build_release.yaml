@@ -122,6 +122,12 @@ jobs:
             git commit -m "chore(INFRA-123): bump chart version to ${VERSION}"
           fi
 
+      - name: Push chart version to main
+        run: |
+          if [ "$(git rev-list --count origin/main..HEAD)" -gt 0 ]; then
+            git push origin HEAD:main
+          fi
+
       - name: Set up Helm
         uses: azure/setup-helm@v4
 
@@ -155,12 +161,6 @@ jobs:
 
       - name: Push Helm Chart to ACR
         run: helm push charts/kbot-self-hosted/packages/${{ env.CHART_FILE }} oci://${{ env.ACR_REGISTRY_URL }}/helm
-
-      - name: Push chart version to main
-        run: |
-          if [ "$(git rev-list --count origin/main..HEAD)" -gt 0 ]; then
-            git push origin HEAD:main
-          fi
 
   release-changelog:
     name: Update release changelog
