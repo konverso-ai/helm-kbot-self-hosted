@@ -8,9 +8,14 @@ on:
   pull_request:
     types: [opened, edited, synchronize]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'push' && github.ref || github.run_id }}
+  cancel-in-progress: false
+
 env:
   ACR_REGISTRY_URL: konversoai.azurecr.io
   CHART_NAME: kbot-self-hosted
+  CHART_PATH: charts/kbot-self-hosted/Chart.yaml
 
 jobs:
   pre-test:
@@ -19,7 +24,7 @@ jobs:
     if: ${{ github.event_name == 'pull_request' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -38,16 +43,84 @@ jobs:
         working-directory: charts/kbot-self-hosted
         run: helm package . --destination ./packages
 
-  build-push-helm:
-    name: Build and push Helm Chart
+  prepare-release:
+    name: Prepare release
     runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/main' }}
+    if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      should_release: ${{ steps.version.outputs.should_release }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: true
+
+      - name: Resolve version
+        id: version
+        run: |
+          set -euo pipefail
+          TAG_PREFIX="${{ env.CHART_NAME }}-"
+          CHART_VER=$(grep '^version:' "${{ env.CHART_PATH }}" | awk '{print $2}')
+          LAST_TAG=$(git tag --list "${TAG_PREFIX}*" --sort=-v:refname | head -n 1 || true)
+
+          if [ -z "$LAST_TAG" ]; then
+            echo "version=${CHART_VER}" >> "$GITHUB_OUTPUT"
+            echo "tag=${TAG_PREFIX}${CHART_VER}" >> "$GITHUB_OUTPUT"
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          LAST_VER="${LAST_TAG#${TAG_PREFIX}}"
+          COMMITS_SINCE=$(git rev-list --count "${LAST_TAG}..HEAD" 2>/dev/null || echo "0")
+
+          if [ "$COMMITS_SINCE" -eq 0 ]; then
+            echo "version=${CHART_VER}" >> "$GITHUB_OUTPUT"
+            echo "tag=${TAG_PREFIX}${CHART_VER}" >> "$GITHUB_OUTPUT"
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          HIGHEST=$(printf '%s\n%s\n' "$CHART_VER" "$LAST_VER" | sort -V | tail -n 1)
+          if [ "$HIGHEST" = "$LAST_VER" ]; then
+            MAJOR=$(echo "$LAST_VER" | cut -d. -f1)
+            MINOR=$(echo "$LAST_VER" | cut -d. -f2)
+            PATCH=$(echo "$LAST_VER" | cut -d. -f3)
+            VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
+          else
+            VERSION="$CHART_VER"
+          fi
+
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG_PREFIX}${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "should_release=true" >> "$GITHUB_OUTPUT"
+
+  build-push-helm:
+    name: Build and push Helm Chart
+    runs-on: ubuntu-latest
+    needs: prepare-release
+    if: ${{ needs.prepare-release.outputs.should_release == 'true' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Bump Chart.yaml when auto-incrementing
+        run: |
+          VERSION="${{ needs.prepare-release.outputs.version }}"
+          CHART_VER=$(grep '^version:' "${{ env.CHART_PATH }}" | awk '{print $2}')
+          if [ "$CHART_VER" != "$VERSION" ]; then
+            sed -i "s/^version:.*/version: ${VERSION}/" "${{ env.CHART_PATH }}"
+            git config user.name "konversoai"
+            git config user.email "73905580+konversoai@users.noreply.github.com"
+            git add "${{ env.CHART_PATH }}"
+            git commit -m "chore(INFRA-123): bump chart version to ${VERSION}"
+          fi
 
       - name: Set up Helm
         uses: azure/setup-helm@v4
@@ -55,29 +128,13 @@ jobs:
       - name: Add dependency chart repos
         run: helm repo add wiremind https://wiremind.github.io/wiremind-helm-charts
 
-      - name: Get Chart Version
-        working-directory: charts/kbot-self-hosted
+      - name: Set chart package metadata
         run: |
-          CHART_VERSION=$(helm show chart . | grep '^version:' | awk '{print $2}')
-          echo "CHART_VERSION=$CHART_VERSION" >> $GITHUB_ENV
-          echo "CHART_FILE=${{ env.CHART_NAME }}-$CHART_VERSION.tgz" >> $GITHUB_ENV
-
-      - name: Check if release already exists
-        id: check_release
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
-        run: |
-          TAG="${{ env.CHART_NAME }}-${{ env.CHART_VERSION }}"
-          if gh release view "$TAG" > /dev/null 2>&1; then
-            echo "Release $TAG already exists, skipping release notes update..."
-            echo "release_created=false" >> $GITHUB_OUTPUT
-          else
-            echo "Release $TAG does not exist, will create..."
-            echo "release_created=true" >> $GITHUB_OUTPUT
-          fi
+          echo "CHART_VERSION=${{ needs.prepare-release.outputs.version }}" >> "$GITHUB_ENV"
+          echo "CHART_FILE=${{ env.CHART_NAME }}-${{ needs.prepare-release.outputs.version }}.tgz" >> "$GITHUB_ENV"
 
       - name: Configure Git
-        run: git config --global user.email "73905580+konversoai@users.noreply.github.com" && git config --global user.name "konversoai"   
+        run: git config --global user.email "73905580+konversoai@users.noreply.github.com" && git config --global user.name "konversoai"
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.7.0
@@ -89,160 +146,57 @@ jobs:
       - name: Authenticate to Helm Registry
         run: |
           helm registry login ${{ env.ACR_REGISTRY_URL }} \
-          --username github-runner-helm-chart \
-          --password ${{ secrets.HELM_ACR_TOKEN }}
+            --username github-runner-helm-chart \
+            --password ${{ secrets.HELM_ACR_TOKEN }}
 
       - name: Package Helm Chart
         working-directory: charts/kbot-self-hosted
-        run: |
-          helm package . --destination ./packages
+        run: helm package . --destination ./packages
 
       - name: Push Helm Chart to ACR
         run: helm push charts/kbot-self-hosted/packages/${{ env.CHART_FILE }} oci://${{ env.ACR_REGISTRY_URL }}/helm
 
-      - name: Update Release Notes
-        if: ${{ steps.check_release.outputs.release_created == 'true' }}
+      - name: Push chart version to main
+        run: |
+          if [ "$(git rev-list --count origin/main..HEAD)" -gt 0 ]; then
+            git push origin HEAD:main
+          fi
+
+  release-changelog:
+    name: Update release changelog
+    runs-on: ubuntu-latest
+    needs: [prepare-release, build-push-helm]
+    if: ${{ needs.prepare-release.outputs.should_release == 'true' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Install git-cliff
+        run: |
+          CLIFF_VERSION=$(curl -s https://api.github.com/repos/orhun/git-cliff/releases/latest | jq -r '.tag_name')
+          curl -sSfL "https://github.com/orhun/git-cliff/releases/download/${CLIFF_VERSION}/git-cliff-${CLIFF_VERSION#v}-x86_64-unknown-linux-gnu.tar.gz" | tar xz
+          sudo mv git-cliff-*/git-cliff /usr/local/bin/
+
+      - name: Generate changelog for release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.prepare-release.outputs.tag }}
+        run: git-cliff --config cliff.toml --unreleased --tag "${TAG}" --output CHANGES.md
+
+      - name: Update GitHub Release notes
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
+          TAG: ${{ needs.prepare-release.outputs.tag }}
+          VERSION: ${{ needs.prepare-release.outputs.version }}
         run: |
-          TAG="${{ env.CHART_NAME }}-${{ env.CHART_VERSION }}"
-          
-          # Fetch tags to ensure we have the latest (including any just created by chart-releaser)
-          git fetch --tags
-          
-          # Get the previous tag (exclude current tag, get the second newest)
-          PREV_TAG=$(git tag --sort=-version:refname | grep "^${{ env.CHART_NAME }}-" | grep -v "^${TAG}$" | head -1)
-          
-          if [ -z "$PREV_TAG" ]; then
-            # First release, get all commits up to HEAD (excluding current tag if it exists)
-            COMMITS=$(git log --pretty=format:"%s|%H" --no-merges --not ${TAG} 2>/dev/null || git log --pretty=format:"%s|%H" --no-merges)
+          if ! gh release view "$TAG" > /dev/null 2>&1; then
+            gh release create "$TAG" \
+              --title "${VERSION}" \
+              --notes-file CHANGES.md \
+              --target main
           else
-            # Get commits since previous tag, excluding the current tag commit
-            COMMITS=$(git log ${PREV_TAG}..HEAD --pretty=format:"%s|%H" --no-merges --not ${TAG} 2>/dev/null || git log ${PREV_TAG}..HEAD --pretty=format:"%s|%H" --no-merges)
+            gh release edit "$TAG" --notes-file CHANGES.md
           fi
-          
-          # Initialize changelog sections
-          BUILD=""
-          CHORE=""
-          CI=""
-          DOCS=""
-          FEAT=""
-          FIX=""
-          OTHER=""
-          PERF=""
-          REFACTOR=""
-          REVERT=""
-          TEST=""
-          
-          # Parse commits
-          while IFS= read -r line; do
-            if [ -n "$line" ]; then
-              COMMIT_MSG=$(echo "$line" | cut -d'|' -f1)
-              COMMIT_HASH=$(echo "$line" | cut -d'|' -f2)
-              SHORT_HASH=${COMMIT_HASH:0:7}
-              COMMIT_LINK="([${SHORT_HASH}](https://github.com/${{ github.repository }}/commit/${COMMIT_HASH}))"
-              
-              # Parse conventional commit formats
-              case "$COMMIT_MSG" in
-                build\(*\):*|build:*)
-                  DESC=$(echo "$COMMIT_MSG" | sed -E 's/^build(\([^)]*\))?:[[:space:]]*//')
-                  BUILD="${BUILD}- ${DESC} ${COMMIT_LINK}\n"
-                  ;;
-                ci\(*\):*|ci:*)
-                  DESC=$(echo "$COMMIT_MSG" | sed -E 's/^ci(\([^)]*\))?:[[:space:]]*//')
-                  CI="${CI}- ${DESC} ${COMMIT_LINK}\n"
-                  ;;
-                chore\(*\):*|chore:*)
-                  DESC=$(echo "$COMMIT_MSG" | sed -E 's/^chore(\([^)]*\))?:[[:space:]]*//')
-                  CHORE="${CHORE}- ${DESC} ${COMMIT_LINK}\n"
-                  ;;
-                docs\(*\):*|docs:*)
-                  DESC=$(echo "$COMMIT_MSG" | sed -E 's/^docs(\([^)]*\))?:[[:space:]]*//')
-                  DOCS="${DOCS}- ${DESC} ${COMMIT_LINK}\n"
-                  ;;
-                feat\(*\):*|feat:*)
-                  DESC=$(echo "$COMMIT_MSG" | sed -E 's/^feat(\([^)]*\))?:[[:space:]]*//')
-                  FEAT="${FEAT}- ${DESC} ${COMMIT_LINK}\n"
-                  ;;
-                fix\(*\):*|fix:*)
-                  DESC=$(echo "$COMMIT_MSG" | sed -E 's/^fix(\([^)]*\))?:[[:space:]]*//')
-                  FIX="${FIX}- ${DESC} ${COMMIT_LINK}\n"
-                  ;;
-                perf\(*\):*|perf:*)
-                  DESC=$(echo "$COMMIT_MSG" | sed -E 's/^perf(\([^)]*\))?:[[:space:]]*//')
-                  PERF="${PERF}- ${DESC} ${COMMIT_LINK}\n"
-                  ;;
-                refactor\(*\):*|refactor:*)
-                  DESC=$(echo "$COMMIT_MSG" | sed -E 's/^refactor(\([^)]*\))?:[[:space:]]*//')
-                  REFACTOR="${REFACTOR}- ${DESC} ${COMMIT_LINK}\n"
-                  ;;
-                revert\(*\):*|revert:*)
-                  DESC=$(echo "$COMMIT_MSG" | sed -E 's/^revert(\([^)]*\))?:[[:space:]]*//')
-                  REVERT="${REVERT}- ${DESC} ${COMMIT_LINK}\n"
-                  ;;
-                test\(*\):*|test:*)
-                  DESC=$(echo "$COMMIT_MSG" | sed -E 's/^test(\([^)]*\))?:[[:space:]]*//')
-                  TEST="${TEST}- ${DESC} ${COMMIT_LINK}\n"
-                  ;;
-                *)
-                  # Include other commits that don't match conventional format
-                  OTHER="${OTHER}- ${COMMIT_MSG} ${COMMIT_LINK}\n"
-                  ;;
-              esac
-            fi
-          done <<< "$COMMITS"
-          
-          # Build changelog
-          CHANGELOG="# What's new\n\n## [${CHART_VERSION}] - $(date +%Y-%m-%d)\n\n"
-          if [ -n "$BUILD" ]; then
-            CHANGELOG="${CHANGELOG}### Build System\n${BUILD}\n"
-          fi
-          
-          if [ -n "$CI" ]; then
-            CHANGELOG="${CHANGELOG}### CI\n${CI}\n"
-          fi
-          
-          if [ -n "$CHORE" ]; then
-            CHANGELOG="${CHANGELOG}### Chores\n${CHORE}\n"
-          fi
-
-          if [ -n "$DOCS" ]; then
-            CHANGELOG="${CHANGELOG}### Documentation\n${DOCS}\n"
-          fi
-
-          if [ -n "$FEAT" ]; then
-            CHANGELOG="${CHANGELOG}### Features\n${FEAT}\n"
-          fi
-
-          if [ -n "$FIX" ]; then
-            CHANGELOG="${CHANGELOG}### Bug Fixes\n${FIX}\n"
-          fi
-          
-          if [ -n "$PERF" ]; then
-            CHANGELOG="${CHANGELOG}### Performance\n${PERF}\n"
-          fi
-          
-          if [ -n "$REFACTOR" ]; then
-            CHANGELOG="${CHANGELOG}### Refactoring\n${REFACTOR}\n"
-          fi
-          
-          if [ -n "$REVERT" ]; then
-            CHANGELOG="${CHANGELOG}### Reverts\n${REVERT}\n"
-          fi
-          
-          if [ -n "$TEST" ]; then
-            CHANGELOG="${CHANGELOG}### Tests\n${TEST}\n"
-          fi
-          
-          if [ -n "$OTHER" ]; then
-            CHANGELOG="${CHANGELOG}### Other Changes\n${OTHER}\n"
-          fi
-          
-          # Write changelog to file to handle multiline
-          echo -e "$CHANGELOG" > /tmp/changelog.md
-          
-          echo "Generated changelog:"
-          cat /tmp/changelog.md
-          
-          # Update the release with generated notes
-          gh release edit "$TAG" --notes-file /tmp/changelog.md
