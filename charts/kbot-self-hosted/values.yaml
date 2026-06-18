@@ -275,10 +275,6 @@ mcpServer:
   nodeSelector: {}
   podExtraAnnotations: {}
   podExtraLabels: {}
-  sentry:
-    enabled: true
-    secretName: ""
-    secretKey: "sentry-dsn-microservices"
   tolerations: []
   resources:
     limits:
