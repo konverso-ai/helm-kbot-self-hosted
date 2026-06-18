@@ -243,3 +243,50 @@ apiOauth2Proxy:
       memory: 100Mi
   service:
     annotations: {}
+mcpServer:
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    cpuThreshold: "60"
+    cooldownPeriod: 300
+    pollingInterval: 15
+  decryptKey: ""
+  decryptKeySecret:
+    enabled: false
+    secretName: ""
+    secretKey: "mcp-decrypt-key"
+  enabled: true
+  extraAnnotations: {}
+  extraEnv: []
+  extraLabels: {}
+  image:
+    tag: v2026.6.5
+  ingress:
+    enabled: true
+    hostname: ""
+    ingressClassName: ""
+    path: "/"
+    pathType: "Prefix"
+    annotations: {}
+    labels: {}
+    tls:
+      secretName: ""
+  keyVault: ""
+  nodeSelector: {}
+  podExtraAnnotations: {}
+  podExtraLabels: {}
+  sentry:
+    enabled: true
+    secretName: ""
+    secretKey: "sentry-dsn-microservices"
+  tolerations: []
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      cpu: 25m
+      memory: 120Mi
+  service:
+    annotations: {}

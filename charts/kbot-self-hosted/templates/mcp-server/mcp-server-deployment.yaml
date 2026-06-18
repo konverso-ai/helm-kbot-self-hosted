@@ -1,0 +1,98 @@
+{{- if .Values.mcpServer.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  {{- with .Values.mcpServer.extraAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    app: mcp-server
+    {{- with .Values.mcpServer.extraLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  name: mcp-server
+  namespace: {{ .Values.global.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: mcp-server
+  revisionHistoryLimit: 2
+  minReadySeconds: 15
+  progressDeadlineSeconds: 300
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      {{- with .Values.mcpServer.podExtraAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: mcp-server
+        {{- with .Values.mcpServer.podExtraLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- if .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- range .Values.global.imagePullSecrets }}
+        - name: {{ .name }}
+        {{- end }}
+      {{- end }}
+      {{- with .Values.mcpServer.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.mcpServer.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: mcp-server
+          image: {{ .Values.global.imageRegistry }}/mcp-server:{{ .Values.mcpServer.image.tag }}
+          env:
+          - name: APP_ENV
+            value: "prod"
+          - name: LOG_LEVEL
+            value: {{ .Values.global.logLevel | default "warning" | quote }}
+          {{- if .Values.mcpServer.decryptKey }}
+          - name: DECRYPT_KEY
+            value: {{ .Values.mcpServer.decryptKey | quote }}
+          {{- else if .Values.mcpServer.decryptKeySecret.enabled }}
+          - name: DECRYPT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.mcpServer.decryptKeySecret.secretName | default (.Values.global.secretName | default "kbot-secrets") }}
+                key: {{ .Values.mcpServer.decryptKeySecret.secretKey | quote }}
+          {{- end }}
+          {{- with .Values.mcpServer.extraEnv }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          resources:
+            {{- toYaml .Values.mcpServer.resources | nindent 12 }}
+          ports:
+            - containerPort: 8081
+              name: apirest
+              protocol: TCP
+{{- end }}
