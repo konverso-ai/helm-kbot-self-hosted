@@ -272,7 +272,6 @@ mcpServer:
     labels: {}
     tls:
       secretName: ""
-  keyVault: ""
   nodeSelector: {}
   podExtraAnnotations: {}
   podExtraLabels: {}
