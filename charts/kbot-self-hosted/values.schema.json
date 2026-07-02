@@ -635,7 +635,7 @@
                     "type": "object",
                     "properties": {
                         "tag": {
-                            "type": "number"
+                            "type": "string"
                         }
                     }
                 },
