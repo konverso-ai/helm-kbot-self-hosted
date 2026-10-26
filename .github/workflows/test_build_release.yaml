@@ -24,7 +24,7 @@ jobs:
     if: ${{ github.event_name == 'pull_request' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -53,7 +53,7 @@ jobs:
       should_release: ${{ steps.version.outputs.should_release }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -103,12 +103,19 @@ jobs:
     needs: prepare-release
     if: ${{ needs.prepare-release.outputs.should_release == 'true' }}
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.GHA_CLIENT_ID }}
+          private-key: ${{ secrets.GHA_APP_PRIVATE_KEY }}
+
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           fetch-tags: true
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Bump Chart.yaml when auto-incrementing
         run: |
@@ -116,8 +123,8 @@ jobs:
           CHART_VER=$(grep '^version:' "${{ env.CHART_PATH }}" | awk '{print $2}')
           if [ "$CHART_VER" != "$VERSION" ]; then
             sed -i "s/^version:.*/version: ${VERSION}/" "${{ env.CHART_PATH }}"
-            git config user.name "konversoai"
-            git config user.email "73905580+konversoai@users.noreply.github.com"
+            git config user.name "${{ steps.app-token.outputs.app-slug }}[bot]"
+            git config user.email "${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
             git add "${{ env.CHART_PATH }}"
             git commit -m "chore(INFRA-123): bump chart version to ${VERSION}"
           fi
@@ -140,12 +147,12 @@ jobs:
           echo "CHART_FILE=${{ env.CHART_NAME }}-${{ needs.prepare-release.outputs.version }}.tgz" >> "$GITHUB_ENV"
 
       - name: Configure Git
-        run: git config --global user.email "73905580+konversoai@users.noreply.github.com" && git config --global user.name "konversoai"
+        run: git config --global user.email "${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com" && git config --global user.name "${{ steps.app-token.outputs.app-slug }}[bot]"
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.7.0
         env:
-          CR_TOKEN: "${{ secrets.GH_PAT }}"
+          CR_TOKEN: "${{ steps.app-token.outputs.token }}"
         with:
           skip_existing: true
 
@@ -168,12 +175,19 @@ jobs:
     needs: [prepare-release, build-push-helm]
     if: ${{ needs.prepare-release.outputs.should_release == 'true' }}
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.GHA_CLIENT_ID }}
+          private-key: ${{ secrets.GHA_APP_PRIVATE_KEY }}
+
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           fetch-tags: true
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Install git-cliff
         run: |
@@ -188,7 +202,7 @@ jobs:
 
       - name: Update GitHub Release notes
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           TAG: ${{ needs.prepare-release.outputs.tag }}
           VERSION: ${{ needs.prepare-release.outputs.version }}
         run: |
