@@ -80,7 +80,7 @@ apiAuthPdfConverter:
     storageClassName: ""
   resources:
     limits:
-      cpu: 75m
+      cpu: 100m
       memory: 350Mi
     requests:
       cpu: 25m
@@ -180,20 +180,22 @@ apiGotenberg:
     - --chromium-auto-start=true
     - --chromium-max-queue-size=15
     - --gotenberg-graceful-shutdown-duration=300s
+    - --libreoffice-restart-after=4
+    - --libreoffice-max-queue-size=10
     - --log-std-format=json
     - --log-level=info
   autoscaling:
     enabled: true
-    minReplicas: 1
+    minReplicas: 2
     maxReplicas: 5
     cpuThreshold: "60"
     cooldownPeriod: 300
-    pollingInterval: 30
+    pollingInterval: 5
   enabled: true
   extraAnnotations: {}
   extraLabels: {}
   image:
-    tag: "8.30"
+    tag: "8.38.1"
   nodeSelector: {}
   podExtraAnnotations: {}
   podExtraLabels: {}
@@ -201,7 +203,7 @@ apiGotenberg:
   resources:
     limits:
       cpu: 800m
-      memory: 1.5Gi
+      memory: 2Gi
     requests:
       cpu: 200m
       memory: 400Mi

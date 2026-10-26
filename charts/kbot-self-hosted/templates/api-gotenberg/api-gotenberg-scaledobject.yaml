@@ -15,9 +15,15 @@ spec:
   maxReplicaCount: {{ .Values.apiGotenberg.autoscaling.maxReplicas }}
   pollingInterval: {{ .Values.apiGotenberg.autoscaling.pollingInterval }}
   triggers:
-  - type: cpu
-    metricType: Utilization
+  - type: metrics-api
+    metricType: Value
     metadata:
-      value: {{ .Values.apiGotenberg.autoscaling.cpuThreshold | quote }}
+      url: "http://api-gotenberg.{{ .Values.global.namespace }}.svc.cluster.local:3000/prometheus/metrics"
+      format: "prometheus"
+      valueLocation: "gotenberg_libreoffice_requests_queue_size"
+      aggregateFromKubeServiceEndpoints: "true"
+      aggregationType: "max"
+      targetValue: "2"
+      activationTargetValue: "2"
 {{- end }}
 
