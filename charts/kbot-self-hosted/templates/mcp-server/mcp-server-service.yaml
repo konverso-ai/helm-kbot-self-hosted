@@ -1,0 +1,21 @@
+{{- if .Values.mcpServer.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-server
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: mcp-server
+  {{- with .Values.mcpServer.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ports:
+    - name: apirest
+      port: 80
+      protocol: TCP
+      targetPort: 8081
+  selector:
+    app: mcp-server
+{{- end }}

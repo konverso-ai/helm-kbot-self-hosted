@@ -1,0 +1,23 @@
+{{- if and .Values.mcpServer.enabled .Values.mcpServer.autoscaling.enabled }}
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: scale-mcp-server
+  namespace: {{ .Values.global.namespace }}
+  annotations:
+    autoscaling.keda.sh/paused: "false"
+spec:
+  scaleTargetRef:
+    name: mcp-server
+    kind: Deployment
+  cooldownPeriod: {{ .Values.mcpServer.autoscaling.cooldownPeriod }}
+  minReplicaCount: {{ .Values.mcpServer.autoscaling.minReplicas }}
+  maxReplicaCount: {{ .Values.mcpServer.autoscaling.maxReplicas }}
+  pollingInterval: {{ .Values.mcpServer.autoscaling.pollingInterval }}
+  triggers:
+  - type: cpu
+    metricType: Utilization
+    metadata:
+      value: {{ .Values.mcpServer.autoscaling.cpuThreshold | quote }}
+      containerName: "mcp-server"
+{{- end }}
