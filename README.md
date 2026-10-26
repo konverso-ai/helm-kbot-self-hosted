@@ -1,5 +1,5 @@
 # Helm Repo - Konverso
-This is a Helm repo for installing kbot on your Kubernetes cluster.
+This Helm repo installs Kbot on a Kubernetes cluster.
 
 > :warning: **Please note**: We take Konverso's security and our users' trust very seriously. If 
 you believe you have found a security issue in our Helm chart, _please responsibly disclose_ 
