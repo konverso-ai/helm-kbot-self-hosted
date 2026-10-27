@@ -19,7 +19,6 @@ by submitting a Kbot Security ticket to our [Support Portal](https://konverso.at
   - The Storage Class should be set up with reclaimPolicy: Retain, to prevent data loss.
   - We recommend the current implementations for the major cloud providers: [AWS EFS CSI](https://docs.aws.amazon.com/eks/latest/userguide/efs-csi.html), [Azure Files](https://docs.microsoft.com/en-us/azure/aks/azure-files-dynamic-pv), [GCP Filestore](https://cloud.google.com/filestore/docs)
 - PostgresSQL database >= 16
-- Redis >= 7.0
 - Sensitive secrets, create a k8s secret file called `kbot-secrets` that contains the following keys or use your own secret management.
   - master-api-key
   - oauth2-proxy-api-key
