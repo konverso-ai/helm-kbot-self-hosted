@@ -118,7 +118,7 @@ apiAuthentication:
       secretKey: "psql-kbot-password"
   resources:
     limits:
-      cpu: 200m
+      cpu: 450m
       memory: 150Mi
     requests:
       cpu: 75m
